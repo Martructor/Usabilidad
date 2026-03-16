@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --primary-green: #00B140;
+  /* Semantic primary, actionable areas */
+  --primary-green-hover: #009935;
+  --bg-color: #F0F9F4;
+  --card-bg: #FFFFFF;
+  --text-dark: #1F2937;
+  --text-gray: #6B7280;
+  --text-light-green: #047857;
+  --chip-inactive-bg: #E8F5EE;
+  --border-radius-card: 16px;
+  --border-radius-btn: 24px;
+  --error-color: #ef4444;
+
+  /* Typography Scale */
+  --font-base: 16px;
+  --font-xs: 0.75rem;
+  /* 12px */
+  --font-sm: 0.875rem;
+  /* 14px */
+  --font-md: 1rem;
+  /* 16px */
+  --font-lg: 1.125rem;
+  /* 18px */
+  --font-xl: 1.25rem;
+  /* 20px */
+  --font-2xl: 1.5rem;
+  /* 24px */
+}
+
+/* High Contrast Theme Variables Override */
+[data-theme='high-contrast'] {
+  --primary-green: #000000;
+  --primary-green-hover: #333333;
+  --bg-color: #FFFFFF;
+  --card-bg: #FFFFFF;
+  --text-dark: #000000;
+  --text-gray: #000000;
+  --text-light-green: #000000;
+  --chip-inactive-bg: #E5E5E5;
+}
+
+[data-text-size='large'] {
+  --font-base: 18px;
+  --font-xs: 0.875rem;
+  --font-sm: 1rem;
+  --font-md: 1.125rem;
+  --font-lg: 1.25rem;
+  --font-xl: 1.375rem;
+  --font-2xl: 1.75rem;
+}
+
+[data-text-size='extra-large'] {
+  --font-base: 22px;
+  --font-xs: 1rem;
+  --font-sm: 1.125rem;
+  --font-md: 1.25rem;
+  --font-lg: 1.5rem;
+  --font-xl: 1.75rem;
+  --font-2xl: 2rem;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: var(--font-base);
+  transition: font-size 0.3s ease;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #e5e7eb;
+  /* Gray outer background for desktop view */
+  color: var(--text-dark);
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Mobile Application Container Constraint */
+.app-container {
+  width: 100%;
+  max-width: 414px;
+  /* iPhone Max width approximately */
+  background-color: var(--bg-color);
+  position: relative;
+  min-height: 100vh;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Base button reset for accessibility */
+button {
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--text-dark);
+  outline-offset: 2px;
+}
