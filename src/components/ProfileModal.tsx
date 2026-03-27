@@ -1,4 +1,4 @@
-import { X, User as UserIcon, Mail, MapPin, Heart, Settings, LogOut } from 'lucide-react';
+import { X, User as UserIcon, Mail, MapPin, Heart, Settings, LogOut, Navigation } from 'lucide-react';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -8,11 +8,12 @@ interface ProfileModalProps {
   onViewSettings: () => void;
   onViewFavorites: () => void;
   onViewAddresses: () => void;
+  onGetLocation: () => void;
   userName: string;
   userEmail: string;
 }
 
-export function ProfileModal({ isOpen, onClose, onLogout, onViewProfile, onViewSettings, onViewFavorites, onViewAddresses, userName, userEmail }: ProfileModalProps) {
+export function ProfileModal({ isOpen, onClose, onLogout, onViewProfile, onViewSettings, onViewFavorites, onViewAddresses, onGetLocation, userName, userEmail }: ProfileModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -39,6 +40,14 @@ export function ProfileModal({ isOpen, onClose, onLogout, onViewProfile, onViewS
 
         {/* Menu Items */}
         <div className="p-4">
+          <button 
+            onClick={onGetLocation}
+            className="w-full flex items-center gap-3 p-4 hover:bg-green-50 rounded-lg transition-colors text-left"
+          >
+            <Navigation className="w-5 h-5 text-green-600" />
+            <span className="text-gray-700">Obtener mi ubicación actual</span>
+          </button>
+
           <button 
             onClick={onViewProfile}
             className="w-full flex items-center gap-3 p-4 hover:bg-green-50 rounded-lg transition-colors text-left"

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { User, Sun, Moon, Contrast, MapPin, Plus, Settings, Heart } from 'lucide-react';
+import { toast, Toaster } from 'sonner';
 import { SearchBar } from './components/SearchBar';
 import { ProximityFilter } from './components/ProximityFilter';
 import { ProductGrid } from './components/ProductGrid';
@@ -134,11 +135,38 @@ const mockProducts: Product[] = [
   }
 ];
 
-const locations = ['Todas', 'Madrid', 'Barcelona', 'Valencia', 'Sevilla'];
+const locationsList = ['Todas', 'Madrid', 'Barcelona', 'Valencia', 'Sevilla'];
+
+const cityCoords: Record<string, {lat: number, lng: number}> = {
+  'Madrid': { lat: 40.4168, lng: -3.7038 },
+  'Barcelona': { lat: 41.3874, lng: 2.1686 },
+  'Valencia': { lat: 39.4699, lng: -0.3774 },
+  'Sevilla': { lat: 37.3891, lng: -5.9845 }
+};
+
+mockProducts.forEach(p => {
+  p.locations?.forEach((loc, index) => {
+    const base = cityCoords[loc.location];
+    if (base) {
+      loc.lat = base.lat + (index * 0.02) - 0.01;
+      loc.lng = base.lng + (index * 0.02) - 0.01;
+    }
+  });
+});
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('Todas');
   const [maxDistance, setMaxDistance] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'register' | 'addProduct' | 'updateProduct' | 'productDetail' | 'profile' | 'settings' | 'favorites' | 'addresses'>('home');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -150,6 +178,26 @@ export default function App() {
   const [theme, setTheme] = useState<'normal' | 'highContrast' | 'dark'>('normal');
   const [currentLocation, setCurrentLocation] = useState('Madrid');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
+
+  const handleGetLocation = () => {
+    if ('geolocation' in navigator) {
+      toast.info('Obteniendo ubicación...', { duration: 2000 });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserCoords({ lat: latitude, lng: longitude });
+          setCurrentLocation('Mi ubicación actual');
+          toast.success(`Ubicación obtenida: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        },
+        (error) => {
+          toast.error('No se pudo obtener la ubicación. Revisa los permisos de tu navegador.');
+        }
+      );
+    } else {
+      toast.error('Tu navegador no soporta geolocalización.');
+    }
+  };
 
   const toggleFavoriteLocation = (locationId: string) => {
     setFavoriteLocationIds(prev => 
@@ -202,12 +250,62 @@ export default function App() {
     setCurrentPage('productDetail');
   };
 
-  const filteredProducts = mockProducts.filter(product => {
+  const processedProducts = mockProducts.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLocation = selectedLocation === 'Todas' || product.location === selectedLocation;
-    const matchesDistance = maxDistance === null || product.distance <= maxDistance;
-    return matchesSearch && matchesLocation && matchesDistance;
+    
+    if (userCoords) {
+      return matchesSearch;
+    } else {
+      const hasPharmacyInCity = product.locations?.some(loc => loc.location === currentLocation) || product.location === currentLocation;
+      return matchesSearch && hasPharmacyInCity;
+    }
+  }).map(product => {
+    if (userCoords && product.locations) {
+      let closestLocation = product.locations[0];
+      let minDistance = Infinity;
+      
+      product.locations.forEach(loc => {
+        if (loc.lat && loc.lng) {
+          const dist = calculateDistance(userCoords.lat, userCoords.lng, loc.lat, loc.lng);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestLocation = loc;
+          }
+        }
+      });
+      
+      if (minDistance !== Infinity) {
+        return {
+          ...product,
+          distance: Number(minDistance.toFixed(1)),
+          location: closestLocation.location,
+          seller: closestLocation.seller,
+          price: closestLocation.price
+        };
+      }
+      return product;
+    } else {
+      const cityLoc = product.locations?.find(loc => loc.location === currentLocation);
+      if (cityLoc) {
+        return {
+          ...product,
+          location: cityLoc.location,
+          seller: cityLoc.seller,
+          price: cityLoc.price,
+          distance: undefined
+        };
+      }
+      return {
+        ...product,
+        distance: undefined
+      };
+    }
+  }).filter(product => {
+    if (userCoords) {
+      return maxDistance === null || (product.distance !== undefined && product.distance <= maxDistance);
+    }
+    return true; 
   });
 
   // Show Login Page
@@ -260,6 +358,8 @@ export default function App() {
         onBack={() => setCurrentPage('home')}
         favoriteLocationIds={favoriteLocationIds}
         onToggleFavoriteLocation={toggleFavoriteLocation}
+        userCoords={userCoords}
+        currentLocation={currentLocation}
       />
     );
   }
@@ -306,6 +406,7 @@ export default function App() {
   // Home Page
   return (
     <div className={`min-h-screen ${getThemeClasses()}`}>
+      <Toaster position="bottom-center" />
       {/* Header */}
       <header className="bg-gradient-to-r from-green-500 to-green-600 border-b border-green-600 sticky top-0 z-40 shadow-sm">
         <div className="max-w-md mx-auto px-4 py-4">
@@ -356,34 +457,36 @@ export default function App() {
       </header>
 
       {/* Proximity Filter */}
-      <div className="bg-white border-b border-green-100">
-        <div className="max-w-md mx-auto px-4 py-3">
-          <ProximityFilter 
-            selected={maxDistance}
-            onSelect={setMaxDistance}
-          />
+      {userCoords && (
+        <div className="bg-white border-b border-green-100">
+          <div className="max-w-md mx-auto px-4 py-3">
+            <ProximityFilter 
+              selected={maxDistance}
+              onSelect={setMaxDistance}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-md mx-auto px-4 py-6">
         {/* Results Count */}
         <div className="mb-4">
           <p className="text-sm text-green-700">
-            {filteredProducts.length} {filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+            {processedProducts.length} {processedProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
           </p>
         </div>
 
         {/* Product Grid */}
         <ProductGrid 
-          products={filteredProducts} 
+          products={processedProducts} 
           onProductClick={handleProductClick}
           favoriteIds={favoriteLocationIds}
           onToggleFavorite={toggleFavoriteLocation}
         />
 
         {/* No Results */}
-        {filteredProducts.length === 0 && (
+        {processedProducts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-green-600">No se encontraron productos</p>
             <p className="text-sm text-green-500 mt-2">Intenta con otra búsqueda o ubicación</p>
@@ -412,6 +515,10 @@ export default function App() {
           setIsProfileModalOpen(false);
           setCurrentPage('addresses');
         }}
+        onGetLocation={() => {
+          setIsProfileModalOpen(false);
+          handleGetLocation();
+        }}
         userName={userName}
         userEmail={userEmail}
       />
@@ -431,8 +538,8 @@ export default function App() {
               {isLoggedIn && (
                 <button
                   onClick={() => {
-                    setCurrentLocation('Mi ubicación');
                     setIsLocationModalOpen(false);
+                    handleGetLocation();
                   }}
                   className={`w-full p-4 rounded-lg text-left transition-colors ${
                     currentLocation === 'Mi ubicación'
@@ -451,6 +558,7 @@ export default function App() {
                   key={city}
                   onClick={() => {
                     setCurrentLocation(city);
+                    setUserCoords(null);
                     setIsLocationModalOpen(false);
                   }}
                   className={`w-full p-4 rounded-lg text-left transition-colors ${

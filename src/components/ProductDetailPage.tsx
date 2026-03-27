@@ -7,6 +7,8 @@ interface ProductDetailPageProps {
   onBack: () => void;
   favoriteLocationIds: string[];
   onToggleFavoriteLocation: (locationId: string) => void;
+  userCoords?: {lat: number; lng: number} | null;
+  currentLocation?: string;
 }
 
 interface PharmacyReview {
@@ -22,38 +24,58 @@ interface LocationWithRating extends ProductLocation {
   reviews: PharmacyReview[];
 }
 
-export function ProductDetailPage({ product, onBack, favoriteLocationIds, onToggleFavoriteLocation }: ProductDetailPageProps) {
+export function ProductDetailPage({ product, onBack, favoriteLocationIds, onToggleFavoriteLocation, userCoords, currentLocation }: ProductDetailPageProps) {
   const [showAddLocationForm, setShowAddLocationForm] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState<LocationWithRating | null>(null);
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(5);
   
-  const [locations, setLocations] = useState<LocationWithRating[]>(
-    product.locations?.map((loc, idx) => ({
-      ...loc,
-      rating: 4.5 - (idx * 0.3), // Valoraciones variadas
-      reviews: [
-        {
-          id: '1',
-          userName: 'María García',
-          rating: 5,
-          comment: 'Excelente atención y servicio rápido.',
-          date: '15/02/2026'
-        },
-        {
-          id: '2',
-          userName: 'Juan Pérez',
-          rating: 4,
-          comment: 'Buen precio y ubicación conveniente.',
-          date: '10/02/2026'
-        }
-      ]
-    })) || [
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  const [locations, setLocations] = useState<LocationWithRating[]>(() => {
+    const baseLocations = product.locations?.map((loc, idx) => {
+      let calcDistance = loc.distance;
+      if (userCoords && loc.lat && loc.lng) {
+         calcDistance = Number(calculateDistance(userCoords.lat, userCoords.lng, loc.lat, loc.lng).toFixed(1));
+      } else if (!userCoords) {
+         calcDistance = undefined;
+      }
+      return {
+        ...loc,
+        distance: calcDistance,
+        rating: 4.5 - (idx * 0.3),
+        reviews: [
+          {
+            id: '1',
+            userName: 'María García',
+            rating: 5,
+            comment: 'Excelente atención y servicio rápido.',
+            date: '15/02/2026'
+          },
+          {
+            id: '2',
+            userName: 'Juan Pérez',
+            rating: 4,
+            comment: 'Buen precio y ubicación conveniente.',
+            date: '10/02/2026'
+          }
+        ]
+      };
+    }) || [
       {
         id: '1',
         location: product.location,
         seller: product.seller,
-        distance: product.distance,
+        distance: userCoords ? product.distance : undefined,
         price: product.price,
         rating: 4.5,
         reviews: [
@@ -73,8 +95,20 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
           }
         ]
       }
-    ]
-  );
+    ];
+
+    if (userCoords) {
+      baseLocations.sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
+    } else if (currentLocation) {
+      baseLocations.sort((a, b) => {
+        if (a.location === currentLocation && b.location !== currentLocation) return -1;
+        if (b.location === currentLocation && a.location !== currentLocation) return 1;
+        return 0;
+      });
+    }
+
+    return baseLocations;
+  });
 
   const [newLocation, setNewLocation] = useState({
     location: '',
@@ -370,8 +404,17 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
                     <p className="text-xs text-gray-600">Precio</p>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 mb-1">{selectedPharmacy.distance} km</p>
-                    <p className="text-xs text-gray-600">Distancia</p>
+                    {selectedPharmacy.distance !== undefined ? (
+                      <>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">{selectedPharmacy.distance} km</p>
+                        <p className="text-xs text-gray-600">Distancia</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">--</p>
+                        <p className="text-xs text-gray-600">Distancia</p>
+                      </>
+                    )}
                   </div>
                 </div>
                 

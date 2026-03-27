@@ -56,9 +56,11 @@ export function ProductCard({ product, onClick, isFavorite, onToggleFavorite }: 
             <span>{product.seller}</span>
           </div>
         </div>
-        <div className="mt-2 text-xs text-green-600">
-          A {product.distance} km de distancia
-        </div>
+        {product.distance !== undefined && (
+          <div className="mt-2 text-xs text-green-600">
+            A {product.distance} km de distancia
+          </div>
+        )}
       </div>
     </div>
   );

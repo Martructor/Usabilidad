@@ -2,8 +2,10 @@ export interface ProductLocation {
   id: string;
   location: string;
   seller: string;
-  distance: number;
+  distance?: number;
   price: number;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Product {
@@ -14,6 +16,6 @@ export interface Product {
   category: string;
   image: string;
   seller: string; // Farmacia principal para mostrar en tarjetas
-  distance: number; // Distancia mínima para mostrar en tarjetas
+  distance?: number; // Distancia mínima para mostrar en tarjetas
   locations?: ProductLocation[]; // Array de ubicaciones/farmacias con el producto
 }
