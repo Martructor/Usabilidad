@@ -7,7 +7,7 @@ interface ProductDetailPageProps {
   product: Product;
   onBack: () => void;
   favoriteLocationIds: string[];
-  onToggleFavoriteLocation: (locationId: string) => void;
+  onToggleFavoriteLocation: (productId: string, pharmacyId: string) => void;
   userCoords?: {lat: number; lng: number} | null;
   currentLocation?: string;
 }
@@ -308,13 +308,13 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
                   <div className="p-3 border-r border-gray-100 font-semibold text-green-600 text-xs">{loc.price.toFixed(2)}€</div>
                   <div className="p-2 flex items-center justify-center border-r border-gray-100">
                     <button
-                      onClick={() => onToggleFavoriteLocation(loc.id)}
+                      onClick={() => onToggleFavoriteLocation(product.id, loc.id)}
                       className={`hover:bg-green-50 rounded p-1 transition-colors ${
-                        favoriteLocationIds.includes(loc.id) ? 'text-red-500' : 'text-gray-400'
+                        favoriteLocationIds.includes(`${product.id}_${loc.id}`) ? 'text-red-500' : 'text-gray-400'
                       }`}
-                      title={favoriteLocationIds.includes(loc.id) ? 'Quitar de favoritos' : 'Añadir a favoritos'}
+                      title={favoriteLocationIds.includes(`${product.id}_${loc.id}`) ? 'Quitar de favoritos' : 'Añadir a favoritos'}
                     >
-                      <Heart className={`w-6 h-6 ${favoriteLocationIds.includes(loc.id) ? 'fill-red-500' : ''}`} />
+                      <Heart className={`w-6 h-6 ${favoriteLocationIds.includes(`${product.id}_${loc.id}`) ? 'fill-red-500' : ''}`} />
                     </button>
                   </div>
                   <div className="p-2 flex items-center justify-center">
@@ -485,15 +485,15 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
                 
                 <div className="mt-3 flex gap-2">
                   <button
-                    onClick={() => onToggleFavoriteLocation(selectedPharmacy.id)}
+                    onClick={() => onToggleFavoriteLocation(product.id, selectedPharmacy.id)}
                     className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                      favoriteLocationIds.includes(selectedPharmacy.id)
+                      favoriteLocationIds.includes(`${product.id}_${selectedPharmacy.id}`)
                         ? 'bg-red-50 text-red-600 border border-red-200'
                         : 'bg-gray-100 text-gray-700 border border-gray-200'
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${favoriteLocationIds.includes(selectedPharmacy.id) ? 'fill-red-500' : ''}`} />
-                    <span className="text-sm">{favoriteLocationIds.includes(selectedPharmacy.id) ? 'Guardado' : 'Guardar'}</span>
+                    <Heart className={`w-4 h-4 ${favoriteLocationIds.includes(`${product.id}_${selectedPharmacy.id}`) ? 'fill-red-500' : ''}`} />
+                    <span className="text-sm">{favoriteLocationIds.includes(`${product.id}_${selectedPharmacy.id}`) ? 'Guardado' : 'Guardar'}</span>
                   </button>
                   <button className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2">
                     <Phone className="w-4 h-4" />

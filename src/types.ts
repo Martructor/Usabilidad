@@ -16,6 +16,7 @@ export interface Product {
   category: string;
   image: string;
   seller: string; // Farmacia principal para mostrar en tarjetas
+  pharmacyId?: string; // ID de la farmacia principal
   distance?: number; // Distancia mínima para mostrar en tarjetas
   locations?: ProductLocation[]; // Array de ubicaciones/farmacias con el producto
 }

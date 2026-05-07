@@ -28,7 +28,11 @@ const usuarioSchema = new mongoose.Schema({
     privacidad: { type: String, default: 'publico' },
     idioma: { type: String, default: 'es' },
     tema: { type: String, default: 'claro' }
-  }
+  },
+  favoritos: [{
+    productoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
+    farmaciaId: { type: mongoose.Schema.Types.ObjectId, ref: 'Farmacia' }
+  }]
 }, { timestamps: true });
 
 export const Usuario = mongoose.model('Usuario', usuarioSchema);

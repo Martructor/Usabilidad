@@ -1,55 +1,49 @@
 import { ArrowLeft, Heart, MapPin, Store } from 'lucide-react';
 import { Product } from '../types';
+import { useState, useEffect } from 'react';
 
 interface FavoritesPageProps {
   onBack: () => void;
   onProductClick: (product: Product) => void;
+  onToggleFavorite: (productId: string, pharmacyId: string) => void;
 }
 
-export function FavoritesPage({ onBack, onProductClick }: FavoritesPageProps) {
-  // Mock favorites - in a real app this would come from state/backend
-  const favoriteProducts: Product[] = [
-    {
-      id: '1',
-      name: 'Paracetamol 1g',
-      price: 3.50,
-      location: 'Madrid',
-      category: 'Analgésicos',
-      image: 'https://images.unsplash.com/photo-1646392206581-2527b1cae5cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaGFybWFjeSUyMG1lZGljaW5lJTIwcGlsbHN8ZW58MXx8fHwxNzcwOTc0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      seller: 'Farmacia Central',
-      distance: 0.5
-    },
-    {
-      id: '3',
-      name: 'Vitamina C 1000mg',
-      price: 12.90,
-      location: 'Valencia',
-      category: 'Vitaminas y Suplementos',
-      image: 'https://images.unsplash.com/photo-1763668331599-487470fb85b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx2aXRhbWluJTIwc3VwcGxlbWVudHMlMjBib3R0bGVzfGVufDF8fHx8MTc3MDk1NTkwNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      seller: 'Farmacia San Vicente',
-      distance: 4.1
-    },
-    {
-      id: '5',
-      name: 'Omeprazol 20mg',
-      price: 5.75,
-      location: 'Madrid',
-      category: 'Digestivos',
-      image: 'https://images.unsplash.com/photo-1646392206581-2527b1cae5cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaGFybWFjeSUyMG1lZGljaW5lJTIwcGlsbHN8ZW58MXx8fHwxNzcwOTc0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      seller: 'Farmacia Goya',
-      distance: 1.2
-    },
-    {
-      id: '7',
-      name: 'Crema Solar SPF 50',
-      price: 15.50,
-      location: 'Barcelona',
-      category: 'Cuidado Personal',
-      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdW5zY3JlZW4lMjBjcmVhbXxlbnwxfHx8fDE3NzA5NTU5MDZ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      seller: 'Farmacia Rambla',
-      distance: 3.5
+export function FavoritesPage({ onBack, onProductClick, onToggleFavorite }: FavoritesPageProps) {
+  const [favoriteProducts, setFavoriteProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchFavorites = async () => {
+    try {
+      const token = localStorage.getItem('boticario_token');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_URL}/api/users/favorites`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFavoriteProducts(data);
+      }
+    } catch (e) {
+      console.error('Error fetching favorites:', e);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const handleUnfavorite = async (e: React.MouseEvent, productId: string, pharmacyId: string) => {
+    e.stopPropagation();
+    await onToggleFavorite(productId, pharmacyId);
+    // Refetch favorites after toggling
+    fetchFavorites();
+  };
 
   return (
     <div className="min-h-screen bg-green-50">
@@ -68,7 +62,11 @@ export function FavoritesPage({ onBack, onProductClick }: FavoritesPageProps) {
       </header>
 
       <div className="max-w-md mx-auto pb-8">
-        {favoriteProducts.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+          </div>
+        ) : favoriteProducts.length === 0 ? (
           /* Empty State */
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4">
@@ -105,7 +103,10 @@ export function FavoritesPage({ onBack, onProductClick }: FavoritesPageProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <h3 className="text-gray-900 font-medium truncate">{product.name}</h3>
-                      <button className="text-red-500 hover:bg-red-50 rounded-full p-1 transition-colors flex-shrink-0">
+                      <button 
+                        onClick={(e) => handleUnfavorite(e, product.id, product.pharmacyId)}
+                        className="text-red-500 hover:bg-red-50 rounded-full p-1 transition-colors flex-shrink-0"
+                      >
                         <Heart className="w-5 h-5 fill-current" />
                       </button>
                     </div>
@@ -121,8 +122,12 @@ export function FavoritesPage({ onBack, onProductClick }: FavoritesPageProps) {
                       <div className="flex items-center gap-1 text-xs text-gray-600">
                         <MapPin className="w-3 h-3" />
                         <span>{product.location}</span>
-                        <span className="text-gray-400">•</span>
-                        <span>{product.distance} km</span>
+                        {product.distance !== undefined && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span>{product.distance} km</span>
+                          </>
+                        )}
                       </div>
                       <p className="font-semibold text-green-600">{product.price.toFixed(2)}€</p>
                     </div>

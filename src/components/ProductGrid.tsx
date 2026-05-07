@@ -5,7 +5,7 @@ interface ProductGridProps {
   products: Product[];
   onProductClick: (product: Product) => void;
   favoriteIds: string[];
-  onToggleFavorite: (productId: string) => void;
+  onToggleFavorite: (productId: string, pharmacyId: string) => void;
 }
 
 export function ProductGrid({ products, onProductClick, favoriteIds, onToggleFavorite }: ProductGridProps) {
@@ -16,8 +16,8 @@ export function ProductGrid({ products, onProductClick, favoriteIds, onToggleFav
           key={product.id} 
           product={product} 
           onClick={() => onProductClick(product)}
-          isFavorite={favoriteIds.includes(product.id)}
-          onToggleFavorite={() => onToggleFavorite(product.id)}
+          isFavorite={favoriteIds.includes(`${product.id}_${product.pharmacyId}`)}
+          onToggleFavorite={() => onToggleFavorite(product.id, product.pharmacyId || '')}
         />
       ))}
     </div>

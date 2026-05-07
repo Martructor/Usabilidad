@@ -63,6 +63,7 @@ export default function App() {
               price: defaultLocation.price,
               location: defaultLocation.location,
               seller: defaultLocation.seller,
+              pharmacyId: defaultLocation.id,
               locations: item.locations
             };
           });
@@ -78,7 +79,30 @@ export default function App() {
       }
     };
     fetchProducts();
+
+    // Check login state and fetch favorites
+    const token = localStorage.getItem('boticario_token');
+    if (token) {
+      setIsLoggedIn(true);
+      fetchFavorites(token);
+    }
   }, []);
+
+  const fetchFavorites = async (token: string) => {
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_URL}/api/users/favorites`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Mapeamos los favoritos a un string unico 'productId_pharmacyId'
+        setFavoriteLocationIds(data.map((f: any) => `${f.id}_${f.pharmacyId}`));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleGetLocation = () => {
     if ('geolocation' in navigator) {
@@ -99,12 +123,37 @@ export default function App() {
     }
   };
 
-  const toggleFavoriteLocation = (locationId: string) => {
-    setFavoriteLocationIds(prev => 
-      prev.includes(locationId) 
-        ? prev.filter(id => id !== locationId)
-        : [...prev, locationId]
-    );
+  const toggleFavoriteLocation = async (productId: string, pharmacyId: string) => {
+    if (!isLoggedIn) {
+      setCurrentPage('login');
+      toast.info('Inicia sesión para guardar favoritos');
+      return;
+    }
+
+    const token = localStorage.getItem('boticario_token');
+    if (!token) return;
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_URL}/api/users/favorites`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId, pharmacyId })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setFavoriteLocationIds(data.favoritos.map((f: any) => `${f.productoId}_${f.farmaciaId}`));
+      } else {
+        toast.error('Error al guardar favorito');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Error de conexión');
+    }
   };
 
   const cycleTheme = () => {
@@ -136,12 +185,16 @@ export default function App() {
     setUserEmail(email);
     setIsLoggedIn(true);
     setCurrentPage('home');
+    const token = localStorage.getItem('boticario_token');
+    if (token) fetchFavorites(token);
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUserName('');
     setUserEmail('');
+    setFavoriteLocationIds([]);
+    localStorage.removeItem('boticario_token');
     setIsProfileModalOpen(false);
   };
 
@@ -290,6 +343,7 @@ export default function App() {
       <FavoritesPage
         onBack={() => setCurrentPage('home')}
         onProductClick={handleProductClick}
+        onToggleFavorite={toggleFavoriteLocation}
       />
     );
   }
