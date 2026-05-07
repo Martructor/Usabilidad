@@ -1,6 +1,7 @@
 import { ArrowLeft, Tag, Heart, Plus, X, Map, Star, Send, MapPin, Phone, Clock, User } from 'lucide-react';
 import { Product, ProductLocation } from '../types';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface ProductDetailPageProps {
   product: Product;
@@ -26,6 +27,7 @@ interface LocationWithRating extends ProductLocation {
 
 export function ProductDetailPage({ product, onBack, favoriteLocationIds, onToggleFavoriteLocation, userCoords, currentLocation }: ProductDetailPageProps) {
   const [showAddLocationForm, setShowAddLocationForm] = useState(false);
+  const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState<LocationWithRating | null>(null);
   const [newComment, setNewComment] = useState('');
   const [newRating, setNewRating] = useState(5);
@@ -116,24 +118,50 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
     price: ''
   });
 
-  const handleAddLocation = () => {
+  const handleAddLocation = async () => {
     if (!newLocation.location || !newLocation.seller || !newLocation.price) {
+      toast.error('Por favor, rellena todos los campos obligatorios');
       return;
     }
 
-    const location: LocationWithRating = {
-      id: Date.now().toString(),
-      location: newLocation.location,
-      seller: newLocation.seller,
-      distance: 0,
-      price: parseFloat(newLocation.price),
-      rating: 0,
-      reviews: []
-    };
+    setIsAddingLocation(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/products/${product.id}/pharmacies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newLocation.seller,
+          location: newLocation.location,
+          address: '',
+          price: parseFloat(newLocation.price)
+        }),
+      });
 
-    setLocations([...locations, location]);
-    setNewLocation({ location: '', seller: '', price: '' });
-    setShowAddLocationForm(false);
+      if (!response.ok) {
+        throw new Error('Error al añadir la ubicación');
+      }
+
+      const location: LocationWithRating = {
+        id: Date.now().toString(),
+        location: newLocation.location,
+        seller: newLocation.seller,
+        distance: 0,
+        price: parseFloat(newLocation.price),
+        rating: 0,
+        reviews: []
+      };
+
+      setLocations([...locations, location]);
+      setNewLocation({ location: '', seller: '', price: '' });
+      setShowAddLocationForm(false);
+      toast.success('Ubicación añadida a la base de datos');
+    } catch (error) {
+      console.error(error);
+      toast.error('Error al conectar con el servidor');
+    } finally {
+      setIsAddingLocation(false);
+    }
   };
 
   const handleAddComment = () => {
@@ -319,9 +347,10 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
                   />
                   <button
                     onClick={handleAddLocation}
-                    className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                    disabled={isAddingLocation}
+                    className="w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    Añadir
+                    {isAddingLocation ? 'Añadiendo...' : 'Añadir'}
                   </button>
                 </div>
               </div>
