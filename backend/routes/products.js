@@ -1,6 +1,7 @@
 import express from 'express';
 import { Item } from '../models/Item.js';
 import { Farmacia } from '../models/Farmacia.js';
+import { Comentario } from '../models/Comentario.js';
 
 const router = express.Router();
 
@@ -99,6 +100,56 @@ router.post('/:id/pharmacies', async (req, res) => {
     res.json({ message: 'Farmacia añadida', item });
   } catch (error) {
     res.status(500).json({ message: 'Error al añadir farmacia', error: error.message });
+  }
+});
+
+// Obtener comentarios de un producto
+router.get('/:id/comments', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const item = await Item.findById(id);
+    if (!item) return res.status(404).json({ message: 'Producto no encontrado' });
+
+    const comentarios = await Comentario.find({ tipo: 'producto', item: id })
+      .populate('usuario', 'nombre_apellidos')
+      .sort({ fecha: -1 });
+
+    res.json(comentarios.map(c => ({
+      id: c._id,
+      usuario: c.usuario ? c.usuario.nombre_apellidos : null,
+      usuarioId: c.usuario ? c.usuario._id : null,
+      comentario: c.comentario,
+      fecha: c.fecha
+    })));
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener comentarios', error: error.message });
+  }
+});
+
+// Añadir un comentario a un producto
+router.post('/:id/comments', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { usuario, comentario } = req.body; // usuario opcional
+
+    if (!comentario || comentario.trim() === '') {
+      return res.status(400).json({ message: 'El comentario no puede estar vacío' });
+    }
+
+    const item = await Item.findById(id);
+    if (!item) return res.status(404).json({ message: 'Producto no encontrado' });
+
+    const nuevoComentario = new Comentario({
+      tipo: 'producto',
+      usuario: usuario || null,
+      item: item._id,
+      comentario: comentario.trim()
+    });
+    await nuevoComentario.save();
+
+    res.status(201).json({ message: 'Comentario añadido', comment: nuevoComentario });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al añadir comentario', error: error.message });
   }
 });
 
