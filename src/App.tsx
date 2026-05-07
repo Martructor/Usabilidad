@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Sun, Moon, Contrast, MapPin, Plus, Settings, Heart } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import { SearchBar } from './components/SearchBar';
@@ -16,143 +16,6 @@ import { UpdateProductPage } from './components/UpdateProductPage';
 import { Product } from './types';
 import { ProductDetailPage } from './components/ProductDetailPage';
 
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Paracetamol 1g',
-    price: 3.50,
-    location: 'Madrid',
-    category: 'Analgésicos',
-    image: 'https://images.unsplash.com/photo-1646392206581-2527b1cae5cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaGFybWFjeSUyMG1lZGljaW5lJTIwcGlsbHN8ZW58MXx8fHwxNzcwOTc0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia Central',
-    distance: 0.5,
-    locations: [
-      { id: '1-1', location: 'Madrid', seller: 'Farmacia Central', distance: 0.5, price: 3.50 },
-      { id: '1-2', location: 'Madrid', seller: 'Farmacia Goya', distance: 1.2, price: 3.75 },
-      { id: '1-3', location: 'Barcelona', seller: 'Farmacia Gracia', distance: 3.5, price: 3.60 }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Ibuprofeno 600mg',
-    price: 4.20,
-    location: 'Barcelona',
-    category: 'Antiinflamatorios',
-    image: 'https://images.unsplash.com/photo-1646392206581-2527b1cae5cb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaGFybWFjeSUyMG1lZGljaW5lJTIwcGlsbHN8ZW58MXx8fHwxNzcwOTc0MDEwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia del Borne',
-    distance: 2.3,
-    locations: [
-      { id: '2-1', location: 'Barcelona', seller: 'Farmacia del Borne', distance: 2.3, price: 4.20 },
-      { id: '2-2', location: 'Barcelona', seller: 'Farmacia Rambla', distance: 4.0, price: 4.50 },
-      { id: '2-3', location: 'Valencia', seller: 'Farmacia San Vicente', distance: 4.1, price: 4.30 }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Vitamina C 1000mg',
-    price: 12.90,
-    location: 'Valencia',
-    category: 'Vitaminas y Suplementos',
-    image: 'https://images.unsplash.com/photo-1763668331599-487470fb85b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx2aXRhbWluJTIwc3VwcGxlbWVudHMlMjBib3R0bGVzfGVufDF8fHx8MTc3MDk1NTkwNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia San Vicente',
-    distance: 4.1,
-    locations: [
-      { id: '3-1', location: 'Valencia', seller: 'Farmacia San Vicente', distance: 4.1, price: 12.90 },
-      { id: '3-2', location: 'Valencia', seller: 'Farmacia Ruzafa', distance: 0.8, price: 13.20 },
-      { id: '3-3', location: 'Madrid', seller: 'Farmacia Mayor', distance: 1.2, price: 12.75 }
-    ]
-  },
-  {
-    id: '4',
-    name: 'Termómetro Digital',
-    price: 8.50,
-    location: 'Madrid',
-    category: 'Material Sanitario',
-    image: 'https://images.unsplash.com/photo-1758206523692-7e9f89bcab5e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwdGhlcm1vbWV0ZXIlMjBoZWFsdGh8ZW58MXx8fHwxNzcwOTM5NzQ0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia Mayor',
-    distance: 1.2,
-    locations: [
-      { id: '4-1', location: 'Madrid', seller: 'Farmacia Mayor', distance: 1.2, price: 8.50 },
-      { id: '4-2', location: 'Sevilla', seller: 'Farmacia Triana', distance: 6.8, price: 9.00 }
-    ]
-  },
-  {
-    id: '5',
-    name: 'Omeprazol 20mg',
-    price: 5.80,
-    location: 'Sevilla',
-    category: 'Digestivos',
-    image: 'https://images.unsplash.com/photo-1763142843470-9a9e9db7f68f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaGFybWFjeSUyMGJvdHRsZXMlMjBtZWRpY2F0aW9ufGVufDF8fHx8MTc3MDk3OTI0OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia Triana',
-    distance: 6.8,
-    locations: [
-      { id: '5-1', location: 'Sevilla', seller: 'Farmacia Triana', distance: 6.8, price: 5.80 },
-      { id: '5-2', location: 'Sevilla', seller: 'Farmacia Nervión', distance: 5.2, price: 5.90 },
-      { id: '5-3', location: 'Madrid', seller: 'Farmacia Central', distance: 0.5, price: 6.00 }
-    ]
-  },
-  {
-    id: '6',
-    name: 'Kit Primeros Auxilios',
-    price: 15.99,
-    location: 'Barcelona',
-    category: 'Material Sanitario',
-    image: 'https://images.unsplash.com/photo-1758204054683-6e3a7d552bd0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwc3VwcGxpZXMlMjBiYW5kYWdlc3xlbnwxfHx8fDE3NzA5NzkyNDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia Gracia',
-    distance: 3.5,
-    locations: [
-      { id: '6-1', location: 'Barcelona', seller: 'Farmacia Gracia', distance: 3.5, price: 15.99 },
-      { id: '6-2', location: 'Barcelona', seller: 'Farmacia del Borne', distance: 2.3, price: 16.50 }
-    ]
-  },
-  {
-    id: '7',
-    name: 'Crema Hidratante Facial',
-    price: 18.50,
-    location: 'Valencia',
-    category: 'Dermofarmacia',
-    image: 'https://images.unsplash.com/photo-1618478064115-ba11c9aac7e3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxza2luY2FyZSUyMGNyZWFtJTIwcGhhcm1hY3l8ZW58MXx8fHwxNzcwOTc5MjQ4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia Ruzafa',
-    distance: 0.8,
-    locations: [
-      { id: '7-1', location: 'Valencia', seller: 'Farmacia Ruzafa', distance: 0.8, price: 18.50 },
-      { id: '7-2', location: 'Valencia', seller: 'Farmacia San Vicente', distance: 4.1, price: 19.00 }
-    ]
-  },
-  {
-    id: '8',
-    name: 'Complejo Vitamínico B',
-    price: 14.30,
-    location: 'Sevilla',
-    category: 'Vitaminas y Suplementos',
-    image: 'https://images.unsplash.com/photo-1763668331599-487470fb85b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx2aXRhbWluJTIwc3VwcGxlbWVudHMlMjBib3R0bGVzfGVufDF8fHx8MTc3MDk1NTkwNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    seller: 'Farmacia Nervión',
-    distance: 5.2,
-    locations: [
-      { id: '8-1', location: 'Sevilla', seller: 'Farmacia Nervión', distance: 5.2, price: 14.30 },
-      { id: '8-2', location: 'Sevilla', seller: 'Farmacia Triana', distance: 6.8, price: 14.50 }
-    ]
-  }
-];
-
-const locationsList = ['Todas', 'Madrid', 'Barcelona', 'Valencia', 'Sevilla'];
-
-const cityCoords: Record<string, {lat: number, lng: number}> = {
-  'Madrid': { lat: 40.4168, lng: -3.7038 },
-  'Barcelona': { lat: 41.3874, lng: 2.1686 },
-  'Valencia': { lat: 39.4699, lng: -0.3774 },
-  'Sevilla': { lat: 37.3891, lng: -5.9845 }
-};
-
-mockProducts.forEach(p => {
-  p.locations?.forEach((loc, index) => {
-    const base = cityCoords[loc.location];
-    if (base) {
-      loc.lat = base.lat + (index * 0.02) - 0.01;
-      loc.lng = base.lng + (index * 0.02) - 0.01;
-    }
-  });
-});
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // km
@@ -179,6 +42,43 @@ export default function App() {
   const [currentLocation, setCurrentLocation] = useState('Madrid');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const response = await fetch(`${API_URL}/api/products`);
+        if (response.ok) {
+          const data = await response.json();
+          const formattedProducts = data.map((item: any) => {
+            const defaultLocation = item.locations?.[0] || { price: 0, location: '', seller: '' };
+            return {
+              id: item.id,
+              name: item.name,
+              image: item.image,
+              category: item.category,
+              weight: item.weight,
+              price: defaultLocation.price,
+              location: defaultLocation.location,
+              seller: defaultLocation.seller,
+              locations: item.locations
+            };
+          });
+          setProducts(formattedProducts);
+        } else {
+          toast.error('Error al cargar los productos');
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Error al conectar con el servidor');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   const handleGetLocation = () => {
     if ('geolocation' in navigator) {
@@ -250,7 +150,7 @@ export default function App() {
     setCurrentPage('productDetail');
   };
 
-  const processedProducts = mockProducts.filter(product => {
+  const processedProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchQuery.toLowerCase());
     
