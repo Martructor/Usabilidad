@@ -207,6 +207,7 @@ export default function App() {
     localStorage.removeItem('boticario_user_name');
     localStorage.removeItem('boticario_user_email');
     setIsProfileModalOpen(false);
+    window.location.reload();
   };
 
   const handleProductClick = (product: Product) => {
