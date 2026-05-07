@@ -1,6 +1,6 @@
 import { ArrowLeft, Tag, Heart, Plus, X, Map, Star, Send, MapPin, Phone, Clock, User } from 'lucide-react';
 import { Product, ProductLocation } from '../types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface ProductDetailPageProps {
@@ -54,23 +54,8 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
       return {
         ...loc,
         distance: calcDistance,
-        rating: 4.5 - (idx * 0.3),
-        reviews: [
-          {
-            id: '1',
-            userName: 'María García',
-            rating: 5,
-            comment: 'Excelente atención y servicio rápido.',
-            date: '15/02/2026'
-          },
-          {
-            id: '2',
-            userName: 'Juan Pérez',
-            rating: 4,
-            comment: 'Buen precio y ubicación conveniente.',
-            date: '10/02/2026'
-          }
-        ]
+        rating: loc.rating || 0,
+        reviews: []
       };
     }) || [
       {
@@ -79,23 +64,8 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
         seller: product.seller,
         distance: userCoords ? product.distance : undefined,
         price: product.price,
-        rating: 4.5,
-        reviews: [
-          {
-            id: '1',
-            userName: 'María García',
-            rating: 5,
-            comment: 'Excelente atención y servicio rápido.',
-            date: '15/02/2026'
-          },
-          {
-            id: '2',
-            userName: 'Juan Pérez',
-            rating: 4,
-            comment: 'Buen precio y ubicación conveniente.',
-            date: '10/02/2026'
-          }
-        ]
+        rating: 0,
+        reviews: []
       }
     ];
 
@@ -193,37 +163,66 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
     }
   };
 
-  const handleAddComment = () => {
-    if (!selectedPharmacy || !newComment.trim()) return;
-
-    const newReview: PharmacyReview = {
-      id: Date.now().toString(),
-      userName: 'Usuario Actual',
-      rating: newRating,
-      comment: newComment,
-      date: new Date().toLocaleDateString('es-ES')
-    };
-
-    const updatedLocations = locations.map(loc => {
-      if (loc.id === selectedPharmacy.id) {
-        const updatedReviews = [...loc.reviews, newReview];
-        const avgRating = updatedReviews.reduce((sum, r) => sum + r.rating, 0) / updatedReviews.length;
-        return {
-          ...loc,
-          reviews: updatedReviews,
-          rating: avgRating
-        };
-      }
-      return loc;
-    });
-
-    setLocations(updatedLocations);
-    const updatedPharmacy = updatedLocations.find(loc => loc.id === selectedPharmacy.id);
-    if (updatedPharmacy) {
-      setSelectedPharmacy(updatedPharmacy);
+  useEffect(() => {
+    if (selectedPharmacy) {
+      const fetchReviews = async () => {
+        try {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          const res = await fetch(`${API_URL}/api/pharmacies/${selectedPharmacy.id}/reviews`);
+          if (res.ok) {
+            const data = await res.json();
+            setSelectedPharmacy(prev => prev ? { ...prev, reviews: data } : null);
+            setLocations(prevLocations => prevLocations.map(l => l.id === selectedPharmacy.id ? { ...l, reviews: data } : l));
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchReviews();
     }
-    setNewComment('');
-    setNewRating(5);
+  }, [selectedPharmacy?.id]);
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+
+    const token = localStorage.getItem('boticario_token');
+    if (!token) {
+      toast.info('Inicia sesión para publicar reseñas');
+      return;
+    }
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_URL}/api/pharmacies/${selectedPharmacy?.id}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ comment: newComment, rating: newRating })
+      });
+
+      if (res.ok) {
+        toast.success('Comentario publicado');
+        setNewComment('');
+        setNewRating(5);
+        
+        const reviewsRes = await fetch(`${API_URL}/api/pharmacies/${selectedPharmacy?.id}/reviews`);
+        if (reviewsRes.ok) {
+          const data = await reviewsRes.json();
+          setSelectedPharmacy(prev => prev ? { ...prev, reviews: data } : null);
+          setLocations(prevLocations => prevLocations.map(l => l.id === selectedPharmacy?.id ? { ...l, reviews: data } : l));
+        }
+        
+        // Also we might want to update the rating of the pharmacy if it changed
+        // But for simplicity we'll let the user see it updated when they reload or we can fetch products again
+      } else {
+        toast.error('Error al publicar comentario');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Error de conexión');
+    }
   };
 
   const renderStars = (rating: number, size: string = "w-4 h-4") => {
