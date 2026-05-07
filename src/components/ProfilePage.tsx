@@ -4,9 +4,9 @@ interface ProfilePageProps {
   onBack: () => void;
   userName: string;
   userEmail: string;
+  onLogout: () => void;
 }
-
-export function ProfilePage({ onBack, userName, userEmail }: ProfilePageProps) {
+export function ProfilePage({ onBack, userName, userEmail, onLogout }: ProfilePageProps) {
   return (
     <div className="min-h-screen bg-green-50">
       {/* Header */}
@@ -132,6 +132,12 @@ export function ProfilePage({ onBack, userName, userEmail }: ProfilePageProps) {
         <div className="mt-4 mx-4 space-y-3">
           <button className="w-full bg-white text-green-600 py-4 rounded-xl hover:bg-green-50 transition-all shadow-sm border border-green-200">
             Cambiar contraseña
+          </button>
+          <button 
+            onClick={onLogout}
+            className="w-full bg-white text-gray-700 py-4 rounded-xl hover:bg-gray-50 transition-all shadow-sm border border-gray-200"
+          >
+            Cerrar sesión
           </button>
           <button className="w-full bg-white text-red-600 py-4 rounded-xl hover:bg-red-50 transition-all shadow-sm border border-red-200">
             Eliminar cuenta

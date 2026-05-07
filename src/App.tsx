@@ -82,8 +82,13 @@ export default function App() {
 
     // Check login state and fetch favorites
     const token = localStorage.getItem('boticario_token');
+    const savedName = localStorage.getItem('boticario_user_name');
+    const savedEmail = localStorage.getItem('boticario_user_email');
+    
     if (token) {
       setIsLoggedIn(true);
+      if (savedName) setUserName(savedName);
+      if (savedEmail) setUserEmail(savedEmail);
       fetchFavorites(token);
     }
   }, []);
@@ -186,7 +191,11 @@ export default function App() {
     setIsLoggedIn(true);
     setCurrentPage('home');
     const token = localStorage.getItem('boticario_token');
-    if (token) fetchFavorites(token);
+    if (token) {
+      localStorage.setItem('boticario_user_name', name);
+      localStorage.setItem('boticario_user_email', email);
+      fetchFavorites(token);
+    }
   };
 
   const handleLogout = () => {
@@ -195,6 +204,8 @@ export default function App() {
     setUserEmail('');
     setFavoriteLocationIds([]);
     localStorage.removeItem('boticario_token');
+    localStorage.removeItem('boticario_user_name');
+    localStorage.removeItem('boticario_user_email');
     setIsProfileModalOpen(false);
   };
 
@@ -324,6 +335,7 @@ export default function App() {
         onBack={() => setCurrentPage('home')}
         userName={userName}
         userEmail={userEmail}
+        onLogout={handleLogout}
       />
     );
   }
