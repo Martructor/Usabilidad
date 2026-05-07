@@ -15,7 +15,7 @@ export function RegisterPage({ onBack, onRegisterSuccess, onGoToLogin }: Registe
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -28,9 +28,27 @@ export function RegisterPage({ onBack, onRegisterSuccess, onGoToLogin }: Registe
       setError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
-    
-    // Redirigir a login después del registro exitoso
-    onGoToLogin();
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, email, location, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Error en el registro');
+        return;
+      }
+      
+      // Guardar token y continuar
+      localStorage.setItem('boticario_token', data.token);
+      onRegisterSuccess(data.user.fullName, data.user.email);
+    } catch (err) {
+      setError('Error al conectar con el servidor backend');
+    }
   };
 
   return (

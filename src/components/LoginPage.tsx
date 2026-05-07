@@ -10,11 +10,32 @@ interface LoginPageProps {
 export function LoginPage({ onBack, onLoginSuccess, onGoToRegister }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const userName = email.split('@')[0];
-    onLoginSuccess(userName, email);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Error al iniciar sesión');
+        return;
+      }
+
+      // Guardar token y continuar
+      localStorage.setItem('boticario_token', data.token);
+      onLoginSuccess(data.user.fullName, data.user.email);
+    } catch (err) {
+      setError('Error al conectar con el servidor backend');
+    }
   };
 
   return (
@@ -42,6 +63,11 @@ export function LoginPage({ onBack, onLoginSuccess, onGoToRegister }: LoginPageP
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
             <div>
               <label htmlFor="email" className="block text-sm text-gray-700 mb-2">
                 Correo electrónico
