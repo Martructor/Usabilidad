@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
+import productRoutes from './routes/products.js';
 
 // Setup environment variables
 dotenv.config();
@@ -16,6 +17,7 @@ app.use(express.json()); // Parse JSON requests
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 // Connect to MongoDB
 const MONGO_URI = process.env.MONGO_URI;

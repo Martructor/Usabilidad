@@ -13,21 +13,48 @@ export function AddProductPage({ onBack, onSuccess }: AddProductPageProps) {
   const [productType, setProductType] = useState('');
   const [location, setLocation] = useState('');
   const [pharmacyName, setPharmacyName] = useState('');
+  const [address, setAddress] = useState('');
   const [price, setPrice] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí iría la lógica para guardar el producto
-    console.log({
-      productName,
-      image,
-      weight,
-      productType,
-      location,
-      pharmacyName,
-      price
-    });
-    onSuccess();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${API_URL}/api/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: productName,
+          image,
+          weight,
+          type: productType,
+          pharmacy: {
+            name: pharmacyName,
+            location,
+            address,
+            price: Number(price)
+          }
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || 'Error al guardar el producto');
+        return;
+      }
+
+      onSuccess();
+    } catch (err) {
+      setError('Error al conectar con el servidor backend');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -55,6 +82,11 @@ export function AddProductPage({ onBack, onSuccess }: AddProductPageProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
             <div>
               <label htmlFor="productName" className="block text-sm text-gray-700 mb-2">
                 Nombre del producto
@@ -193,11 +225,30 @@ export function AddProductPage({ onBack, onSuccess }: AddProductPageProps) {
               </div>
             </div>
 
+            <div>
+              <label htmlFor="address" className="block text-sm text-gray-700 mb-2">
+                Dirección de la farmacia
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Ej: Calle Mayor 12"
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg"
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 rounded-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+              disabled={isLoading}
             >
-              Publicar Producto
+              {isLoading ? 'Publicando...' : 'Publicar Producto'}
             </button>
           </form>
         </div>
