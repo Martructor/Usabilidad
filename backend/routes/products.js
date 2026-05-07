@@ -1,40 +1,73 @@
 import express from 'express';
-import { Product } from '../models/Product.js';
+import { Item } from '../models/Item.js';
+import { Farmacia } from '../models/Farmacia.js';
 
 const router = express.Router();
 
-// Obtener todos los productos
+// Obtener todos los productos (con farmacias pobladas)
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const items = await Item.find()
+      .populate('farmacias.farmacia')
+      .sort({ createdAt: -1 });
+    
+    // Formatear para que coincida con el frontend
+    const products = items.map(item => ({
+      id: item._id,
+      name: item.nombre,
+      image: item.foto,
+      category: item.categoria,
+      weight: item.peso,
+      locations: item.farmacias.map(f => ({
+        id: f.farmacia._id,
+        location: f.farmacia.ciudad.nombre,
+        seller: f.farmacia.nombre,
+        price: f.precio,
+        rating: f.farmacia.valoracion,
+        address: f.farmacia.direccion || '',
+        lat: f.farmacia.coordenadas.latitud,
+        lng: f.farmacia.coordenadas.longitud
+      }))
+    }));
+
     res.json(products);
   } catch (error) {
-    res.status(500).json({ message: 'Error al obtener los productos', error: error.message });
+    res.status(500).json({ message: 'Error al obtener productos', error: error.message });
   }
 });
 
-// Crear un nuevo producto (incluyendo su primera farmacia)
+// Crear producto y su farmacia inicial
 router.post('/', async (req, res) => {
   try {
     const { name, image, weight, type, pharmacy } = req.body;
-    
-    // Validación básica
     if (!name || !image || !weight || !type || !pharmacy) {
-      return res.status(400).json({ message: 'Todos los campos del producto y de la farmacia son obligatorios' });
+      return res.status(400).json({ message: 'Faltan campos obligatorios' });
     }
 
-    const newProduct = new Product({
-      name,
-      image,
-      weight,
-      type,
-      pharmacies: [pharmacy] // Añadimos la farmacia inicial
+    // Crear la farmacia
+    const nuevaFarmacia = new Farmacia({
+      nombre: pharmacy.name,
+      ciudad: {
+        nombre: pharmacy.location,
+        pais: 'España'
+      },
+      direccion: pharmacy.address || '',
     });
+    await nuevaFarmacia.save();
 
-    await newProduct.save();
-    res.status(201).json({ message: 'Producto creado exitosamente', product: newProduct });
+    // Crear el item con referencia a la farmacia
+    const nuevoItem = new Item({
+      foto: image,
+      nombre: name,
+      categoria: type,
+      peso: weight,
+      farmacias: [{ farmacia: nuevaFarmacia._id, precio: pharmacy.price }]
+    });
+    await nuevoItem.save();
+
+    res.status(201).json({ message: 'Producto creado', product: nuevoItem });
   } catch (error) {
-    res.status(500).json({ message: 'Error al crear el producto', error: error.message });
+    res.status(500).json({ message: 'Error al crear producto', error: error.message });
   }
 });
 
@@ -42,19 +75,26 @@ router.post('/', async (req, res) => {
 router.post('/:id/pharmacies', async (req, res) => {
   try {
     const { id } = req.params;
-    const pharmacy = req.body;
+    const pharmacy = req.body; // { name, location, address, price }
 
-    const product = await Product.findById(id);
-    if (!product) {
-      return res.status(404).json({ message: 'Producto no encontrado' });
-    }
+    const item = await Item.findById(id);
+    if (!item) return res.status(404).json({ message: 'Producto no encontrado' });
 
-    product.pharmacies.push(pharmacy);
-    await product.save();
+    // Crear la farmacia
+    const nuevaFarmacia = new Farmacia({
+      nombre: pharmacy.name,
+      ciudad: { nombre: pharmacy.location },
+      direccion: pharmacy.address
+    });
+    await nuevaFarmacia.save();
 
-    res.json({ message: 'Farmacia añadida al producto exitosamente', product });
+    // Añadir al array de farmacias del item
+    item.farmacias.push({ farmacia: nuevaFarmacia._id, precio: pharmacy.price });
+    await item.save();
+
+    res.json({ message: 'Farmacia añadida', item });
   } catch (error) {
-    res.status(500).json({ message: 'Error al añadir la farmacia', error: error.message });
+    res.status(500).json({ message: 'Error al añadir farmacia', error: error.message });
   }
 });
 

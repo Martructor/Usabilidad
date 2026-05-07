@@ -1,27 +1,34 @@
 import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema({
-  fullName: {
-    type: String,
-    required: true,
-    trim: true,
-  },
+const usuarioSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
     unique: true,
     trim: true,
-    lowercase: true,
+    lowercase: true
   },
-  location: {
-    type: String,
-    enum: ['Madrid', 'Barcelona', 'Valencia', 'Sevilla'],
-    required: true,
-  },
-  password: {
+  nombre_apellidos: {
     type: String,
     required: true,
+    trim: true
   },
+  lugar_residencia: {
+    ciudad: { type: String, required: true },
+    pais: { type: String, default: 'España' }
+  },
+  contrasena: {
+    type: String,
+    required: true
+  },
+  telefono: String,
+  fecha_nacimiento: String,
+  ajustes: {
+    notificaciones: { type: Boolean, default: true },
+    privacidad: { type: String, default: 'publico' },
+    idioma: { type: String, default: 'es' },
+    tema: { type: String, default: 'claro' }
+  }
 }, { timestamps: true });
 
-export const User = mongoose.model('User', userSchema);
+export const Usuario = mongoose.model('Usuario', usuarioSchema);

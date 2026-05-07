@@ -1,80 +1,77 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User.js';
+import { Usuario } from '../models/Usuario.js';
 
 const router = express.Router();
 
-// Route: POST /api/auth/register
+// Registro
 router.post('/register', async (req, res) => {
   try {
     const { fullName, email, location, password } = req.body;
 
-    // Check if user exists
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'Este correo electrónico ya está registrado' });
+    // Verificar si el usuario ya existe
+    let usuario = await Usuario.findOne({ email });
+    if (usuario) {
+      return res.status(400).json({ message: 'Este correo ya está registrado' });
     }
 
-    // Encrypt password
+    // Encriptar contraseña
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Save user
-    user = new User({
-      fullName,
+    // Crear usuario (mapeo de campos del frontend)
+    usuario = new Usuario({
       email,
-      location,
-      password: hashedPassword,
+      nombre_apellidos: fullName,
+      lugar_residencia: {
+        ciudad: location,
+        pais: 'España'
+      },
+      contrasena: hashedPassword
     });
-    await user.save();
+    await usuario.save();
 
-    // Create session token
-    const payload = {
-      user: { id: user.id }
-    };
-    
-    // Using a fallback secret key for development if env is not set
+    // Generar token
+    const payload = { user: { id: usuario.id } };
     const jwtSecret = process.env.JWT_SECRET || 'boticario_super_secret';
     jwt.sign(payload, jwtSecret, { expiresIn: '7d' }, (err, token) => {
       if (err) throw err;
-      res.status(201).json({ token, user: { fullName: user.fullName, email: user.email } });
+      res.status(201).json({
+        token,
+        user: { fullName: usuario.nombre_apellidos, email: usuario.email }
+      });
     });
-
   } catch (error) {
     console.error(error.message);
     res.status(500).send('Error en el servidor');
   }
 });
 
-// Route: POST /api/auth/login
+// Login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Search user
-    let user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'No existe una cuenta con este correo electrónico' });
+    const usuario = await Usuario.findOne({ email });
+    if (!usuario) {
+      return res.status(400).json({ message: 'Correo no registrado' });
     }
 
-    // Verify password
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, usuario.contrasena);
     if (!isMatch) {
       return res.status(400).json({ message: 'Contraseña incorrecta' });
     }
 
-    // Return token
-    const payload = {
-      user: { id: user.id }
-    };
-
+    const payload = { user: { id: usuario.id } };
     const jwtSecret = process.env.JWT_SECRET || 'boticario_super_secret';
     jwt.sign(payload, jwtSecret, { expiresIn: '7d' }, (err, token) => {
       if (err) throw err;
-      res.json({ token, user: { fullName: user.fullName, email: user.email } });
+      res.json({
+        token,
+        user: { fullName: usuario.nombre_apellidos, email: usuario.email }
+      });
     });
-
   } catch (error) {
     console.error(error.message);
     res.status(500).send('Error en el servidor');
