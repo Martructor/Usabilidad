@@ -115,7 +115,8 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
   const [newLocation, setNewLocation] = useState({
     location: '',
     seller: '',
-    price: ''
+    price: '',
+    address: ''
   });
 
   const handleAddLocation = async () => {
@@ -126,6 +127,25 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
 
     setIsAddingLocation(true);
     try {
+      // Intentar geocodificar la dirección si existe
+      let lat = null;
+      let lng = null;
+      if (newLocation.address && newLocation.location) {
+        try {
+          const query = `${newLocation.address}, ${newLocation.location}, España`;
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            if (geoData && geoData.length > 0) {
+              lat = parseFloat(geoData[0].lat);
+              lng = parseFloat(geoData[0].lon);
+            }
+          }
+        } catch (geoErr) {
+          console.error("Error geocodificando la dirección:", geoErr);
+        }
+      }
+
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
       const response = await fetch(`${API_URL}/api/products/${product.id}/pharmacies`, {
         method: 'POST',
@@ -133,8 +153,10 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
         body: JSON.stringify({
           name: newLocation.seller,
           location: newLocation.location,
-          address: '',
-          price: parseFloat(newLocation.price)
+          address: newLocation.address,
+          price: parseFloat(newLocation.price),
+          lat,
+          lng
         }),
       });
 
@@ -142,18 +164,25 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
         throw new Error('Error al añadir la ubicación');
       }
 
+      let calcDistance = undefined;
+      if (userCoords && lat && lng) {
+         calcDistance = Number(calculateDistance(userCoords.lat, userCoords.lng, lat, lng).toFixed(1));
+      }
+
       const location: LocationWithRating = {
         id: Date.now().toString(),
         location: newLocation.location,
         seller: newLocation.seller,
-        distance: 0,
+        distance: calcDistance,
         price: parseFloat(newLocation.price),
         rating: 0,
-        reviews: []
+        reviews: [],
+        lat: lat || undefined,
+        lng: lng || undefined
       };
 
       setLocations([...locations, location]);
-      setNewLocation({ location: '', seller: '', price: '' });
+      setNewLocation({ location: '', seller: '', price: '', address: '' });
       setShowAddLocationForm(false);
       toast.success('Ubicación añadida a la base de datos');
     } catch (error) {
@@ -335,6 +364,13 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
                     placeholder="Nombre de farmacia"
                     value={newLocation.seller}
                     onChange={(e) => setNewLocation({ ...newLocation, seller: e.target.value })}
+                    className="w-full p-2 text-sm bg-white rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Dirección (opcional)"
+                    value={newLocation.address}
+                    onChange={(e) => setNewLocation({ ...newLocation, address: e.target.value })}
                     className="w-full p-2 text-sm bg-white rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                   <input

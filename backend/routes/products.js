@@ -85,7 +85,11 @@ router.post('/:id/pharmacies', async (req, res) => {
     const nuevaFarmacia = new Farmacia({
       nombre: pharmacy.name,
       ciudad: { nombre: pharmacy.location },
-      direccion: pharmacy.address
+      direccion: pharmacy.address,
+      coordenadas: {
+        latitud: pharmacy.lat || null,
+        longitud: pharmacy.lng || null
+      }
     });
     await nuevaFarmacia.save();
 
