@@ -1,29 +1,30 @@
 import { ArrowLeft, Eye, Type, Palette, Globe, Shield, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { applySettings } from '../utils/settings';
+import { getTranslation, Language } from '../i18n';
 
 interface SettingsPageProps {
   onBack: () => void;
   onViewPrivacyPolicy: () => void;
   onViewTerms: () => void;
+  onLanguageChange: (lang: string) => void;
+  language: string;
 }
 
-export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: SettingsPageProps) {
+export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms, onLanguageChange, language }: SettingsPageProps) {
   const [screenReader, setScreenReader] = useState(false);
   const [fontSize, setFontSize] = useState('normal');
   const [colorTheme, setColorTheme] = useState('verde');
-  const [language, setLanguage] = useState('es');
 
   useEffect(() => {
     const savedScreenReader = localStorage.getItem('boticario_screen_reader') === 'true';
     const savedFontSize = localStorage.getItem('boticario_font_size') || 'normal';
     const savedColorTheme = localStorage.getItem('boticario_color_theme') || 'verde';
-    const savedLanguage = localStorage.getItem('boticario_language') || 'es';
 
     setScreenReader(savedScreenReader);
     setFontSize(savedFontSize);
     setColorTheme(savedColorTheme);
-    setLanguage(savedLanguage);
   }, []);
 
   const handleSaveSetting = (key: string, value: string) => {
@@ -40,30 +41,35 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
     const value = e.target.value;
     setFontSize(value);
     handleSaveSetting('boticario_font_size', value);
+    applySettings();
   };
 
   const handleColorThemeChange = (theme: string) => {
     setColorTheme(theme);
     handleSaveSetting('boticario_color_theme', theme);
+    applySettings();
   };
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setLanguage(value);
     handleSaveSetting('boticario_language', value);
+    onLanguageChange(value);
   };
 
   const resetSettings = () => {
     setScreenReader(false);
     setFontSize('normal');
     setColorTheme('verde');
-    setLanguage('es');
+    onLanguageChange('es');
     localStorage.removeItem('boticario_screen_reader');
     localStorage.removeItem('boticario_font_size');
     localStorage.removeItem('boticario_color_theme');
     localStorage.removeItem('boticario_language');
+    applySettings();
     toast.success('Configuración restaurada por defecto');
   };
+
+  const t = (key: any) => getTranslation(language, key);
 
   return (
     <div className="min-h-screen bg-green-50">
@@ -75,7 +81,7 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-white flex-1 text-center">Configuración</h1>
+          <h1 className="text-white flex-1 text-center">{t('settings')}</h1>
           <div className="w-10"></div>
         </div>
       </header>
@@ -85,14 +91,14 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
         <div className="bg-white mt-4 mx-4 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Eye className="w-6 h-6 text-green-600" />
-            <h3 className="text-gray-900">Accesibilidad</h3>
+            <h3 className="text-gray-900">{t('accessibility')}</h3>
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex-1">
-                <p className="text-sm text-gray-700 font-medium">Lector de pantalla</p>
-                <p className="text-xs text-gray-500 mt-1">Mejora compatibilidad con lectores</p>
+                <p className="text-sm text-gray-700 font-medium">{t('screenReader')}</p>
+                <p className="text-xs text-gray-500 mt-1">{t('screenReaderDesc')}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer ml-3">
                 <input type="checkbox" className="sr-only peer" checked={screenReader} onChange={handleScreenReaderChange} />
@@ -106,21 +112,21 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
         <div className="bg-white mt-4 mx-4 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Type className="w-6 h-6 text-green-600" />
-            <h3 className="text-gray-900">Tamaño de texto</h3>
+            <h3 className="text-gray-900">{t('fontSize')}</h3>
           </div>
 
           <div className="space-y-3">
             <label className="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <input type="radio" name="fontSize" value="normal" checked={fontSize === 'normal'} onChange={handleFontSizeChange} className="w-4 h-4 text-green-600 focus:ring-green-500" />
-              <span className="ml-3 text-sm text-gray-700">Normal</span>
+              <span className="ml-3 text-sm text-gray-700">{t('normal')}</span>
             </label>
             <label className="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <input type="radio" name="fontSize" value="grande" checked={fontSize === 'grande'} onChange={handleFontSizeChange} className="w-4 h-4 text-green-600 focus:ring-green-500" />
-              <span className="ml-3 text-base text-gray-700">Grande</span>
+              <span className="ml-3 text-base text-gray-700">{t('large')}</span>
             </label>
             <label className="flex items-center p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
               <input type="radio" name="fontSize" value="muy_grande" checked={fontSize === 'muy_grande'} onChange={handleFontSizeChange} className="w-4 h-4 text-green-600 focus:ring-green-500" />
-              <span className="ml-3 text-lg text-gray-700">Muy grande</span>
+              <span className="ml-3 text-lg text-gray-700">{t('veryLarge')}</span>
             </label>
           </div>
         </div>
@@ -129,18 +135,18 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
         <div className="bg-white mt-4 mx-4 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Palette className="w-6 h-6 text-green-600" />
-            <h3 className="text-gray-900">Tema de color</h3>
+            <h3 className="text-gray-900">{t('colorTheme')}</h3>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <button onClick={() => handleColorThemeChange('verde')} className={`p-4 rounded-lg text-white text-sm font-medium transition-shadow border-2 bg-gradient-to-br from-green-500 to-green-600 ${colorTheme === 'verde' ? 'border-green-700 shadow-md' : 'border-transparent hover:shadow-md'}`}>
-              Verde
+              {t('green')}
             </button>
             <button onClick={() => handleColorThemeChange('azul')} className={`p-4 rounded-lg text-white text-sm font-medium transition-shadow border-2 bg-gradient-to-br from-blue-500 to-blue-600 ${colorTheme === 'azul' ? 'border-blue-700 shadow-md' : 'border-transparent hover:shadow-md'}`}>
-              Azul
+              {t('blue')}
             </button>
             <button onClick={() => handleColorThemeChange('morado')} className={`p-4 rounded-lg text-white text-sm font-medium transition-shadow border-2 bg-gradient-to-br from-purple-500 to-purple-600 ${colorTheme === 'morado' ? 'border-purple-700 shadow-md' : 'border-transparent hover:shadow-md'}`}>
-              Morado
+              {t('purple')}
             </button>
           </div>
         </div>
@@ -149,7 +155,7 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
         <div className="bg-white mt-4 mx-4 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Globe className="w-6 h-6 text-green-600" />
-            <h3 className="text-gray-900">Idioma</h3>
+            <h3 className="text-gray-900">{t('language')}</h3>
           </div>
 
           <select value={language} onChange={handleLanguageChange} className="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700">
@@ -165,17 +171,17 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
         <div className="bg-white mt-4 mx-4 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Shield className="w-6 h-6 text-green-600" />
-            <h3 className="text-gray-900">Privacidad y seguridad</h3>
+            <h3 className="text-gray-900">{t('privacy')}</h3>
           </div>
 
           <div className="space-y-3">
             <button onClick={onViewPrivacyPolicy} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <span className="text-sm text-gray-700">Política de privacidad</span>
+              <span className="text-sm text-gray-700">{t('privacyPolicy')}</span>
               <ArrowLeft className="w-4 h-4 text-gray-400 rotate-180" />
             </button>
 
             <button onClick={onViewTerms} className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <span className="text-sm text-gray-700">Términos y condiciones</span>
+              <span className="text-sm text-gray-700">{t('terms')}</span>
               <ArrowLeft className="w-4 h-4 text-gray-400 rotate-180" />
             </button>
           </div>
@@ -185,20 +191,20 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms }: Setti
         <div className="bg-white mt-4 mx-4 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Info className="w-6 h-6 text-green-600" />
-            <h3 className="text-gray-900">Acerca de</h3>
+            <h3 className="text-gray-900">{t('about')}</h3>
           </div>
 
           <div className="space-y-2 text-sm text-gray-600">
-            <p><span className="font-medium text-gray-700">Versión:</span> 1.0.0</p>
-            <p><span className="font-medium text-gray-700">Última actualización:</span> 14 de febrero, 2026</p>
-            <button className="text-green-600 hover:underline mt-2">Ver registro de cambios</button>
+            <p><span className="font-medium text-gray-700">{t('version')}</span> 1.0.0</p>
+            <p><span className="font-medium text-gray-700">{t('lastUpdate')}</span> 14 de febrero, 2026</p>
+            <button className="text-green-600 hover:underline mt-2">{t('viewChangelog')}</button>
           </div>
         </div>
 
         {/* Reset Settings */}
         <div className="mt-4 mx-4">
           <button onClick={resetSettings} className="w-full bg-white text-red-600 py-4 rounded-xl hover:bg-red-50 transition-all shadow-sm border border-red-200">
-            Restaurar configuración predeterminada
+            {t('resetSettings')}
           </button>
         </div>
       </div>

@@ -17,6 +17,8 @@ import { Product } from './types';
 import { ProductDetailPage } from './components/ProductDetailPage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { TermsConditionsPage } from './components/TermsConditionsPage';
+import { applySettings } from './utils/settings';
+import { getTranslation } from './i18n';
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // km
@@ -45,8 +47,12 @@ export default function App() {
   const [userCoords, setUserCoords] = useState<{lat: number, lng: number} | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [appLanguage, setAppLanguage] = useState('es');
 
   useEffect(() => {
+    applySettings();
+    setAppLanguage(localStorage.getItem('boticario_language') || 'es');
+    
     const fetchProducts = async () => {
       try {
         const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -351,6 +357,8 @@ export default function App() {
         onBack={() => setCurrentPage('home')}
         onViewPrivacyPolicy={() => setCurrentPage('privacyPolicy')}
         onViewTerms={() => setCurrentPage('termsConditions')}
+        onLanguageChange={setAppLanguage}
+        language={appLanguage}
       />
     );
   }
@@ -393,6 +401,8 @@ export default function App() {
     );
   }
 
+  const t = (key: any) => getTranslation(appLanguage, key);
+
   // Home Page
   return (
     <div className={`min-h-screen ${getThemeClasses()}`}>
@@ -411,7 +421,7 @@ export default function App() {
             </button>
 
             {/* Título centrado */}
-            <h1 className="text-center text-white flex-1 text-lg md:text-xl">El Boticario</h1>
+            <h1 className="text-center text-white flex-1 text-lg md:text-xl">{t('title')}</h1>
 
             {/* Botones de la derecha */}
             <div className="flex gap-2 items-center flex-shrink-0">
@@ -463,7 +473,7 @@ export default function App() {
         {/* Results Count */}
         <div className="mb-4">
           <p className="text-sm text-green-700">
-            {processedProducts.length} {processedProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+            {processedProducts.length} {processedProducts.length === 1 ? t('productFound') : t('productsFound')}
           </p>
         </div>
 
@@ -478,8 +488,8 @@ export default function App() {
         {/* No Results */}
         {processedProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-green-600">No se encontraron productos</p>
-            <p className="text-sm text-green-500 mt-2">Intenta con otra búsqueda o ubicación</p>
+            <p className="text-green-600">{t('noProducts')}</p>
+            <p className="text-sm text-green-500 mt-2">{t('tryAnother')}</p>
           </div>
         )}
       </main>
@@ -532,14 +542,14 @@ export default function App() {
                     handleGetLocation();
                   }}
                   className={`w-full p-4 rounded-lg text-left transition-colors ${
-                    currentLocation === 'Mi ubicación'
+                    currentLocation === 'Mi ubicación actual'
                       ? 'bg-green-100 text-green-700 border-2 border-green-500'
                       : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <MapPin className="w-5 h-5" />
-                    <span className="font-medium">Mi ubicación</span>
+                    <span className="font-medium">{t('myLocation')}</span>
                   </div>
                 </button>
               )}
