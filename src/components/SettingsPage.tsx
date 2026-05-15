@@ -139,7 +139,7 @@ export function SettingsPage({ onBack, onViewPrivacyPolicy, onViewTerms, onLangu
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <button onClick={() => handleColorThemeChange('verde')} className={`p-4 rounded-lg text-white text-sm font-medium transition-shadow border-2 bg-gradient-to-br from-green-500 to-green-600 ${colorTheme === 'verde' ? 'border-green-700 shadow-md' : 'border-transparent hover:shadow-md'}`}>
+            <button onClick={() => handleColorThemeChange('verde')} className={`p-4 rounded-lg text-white text-sm font-medium transition-shadow border-2 bg-gradient-to-br from-[#22c55e] to-[#16a34a] ${colorTheme === 'verde' ? 'border-[#15803d] shadow-md' : 'border-transparent hover:shadow-md'}`}>
               {t('green')}
             </button>
             <button onClick={() => handleColorThemeChange('azul')} className={`p-4 rounded-lg text-white text-sm font-medium transition-shadow border-2 bg-gradient-to-br from-blue-500 to-blue-600 ${colorTheme === 'azul' ? 'border-blue-700 shadow-md' : 'border-transparent hover:shadow-md'}`}>

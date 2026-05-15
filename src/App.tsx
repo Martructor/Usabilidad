@@ -64,7 +64,7 @@ export default function App() {
             return {
               id: item.id,
               name: item.name,
-              image: item.image,
+              image: item.image?.startsWith('/') ? `${API_URL}${item.image}` : item.image,
               category: item.category,
               weight: item.weight,
               price: defaultLocation.price,

@@ -1,9 +1,22 @@
 import express from 'express';
+import multer from 'multer';
+import path from 'path';
 import { Item } from '../models/Item.js';
 import { Farmacia } from '../models/Farmacia.js';
 import { Comentario } from '../models/Comentario.js';
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname))
+  }
+});
+const upload = multer({ storage: storage });
 
 // Obtener todos los productos (con farmacias pobladas)
 router.get('/', async (req, res) => {
@@ -38,21 +51,30 @@ router.get('/', async (req, res) => {
 });
 
 // Crear producto y su farmacia inicial
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
-    const { name, image, weight, type, pharmacy } = req.body;
-    if (!name || !image || !weight || !type || !pharmacy) {
+    const { name, weight, type, pharmacy } = req.body;
+    const image = req.file ? `/uploads/${req.file.filename}` : req.body.image;
+
+    let parsedPharmacy;
+    try {
+      parsedPharmacy = typeof pharmacy === 'string' ? JSON.parse(pharmacy) : pharmacy;
+    } catch(e) {
+      parsedPharmacy = pharmacy;
+    }
+
+    if (!name || !image || !weight || !type || !parsedPharmacy) {
       return res.status(400).json({ message: 'Faltan campos obligatorios' });
     }
 
     // Crear la farmacia
     const nuevaFarmacia = new Farmacia({
-      nombre: pharmacy.name,
+      nombre: parsedPharmacy.name,
       ciudad: {
-        nombre: pharmacy.location,
+        nombre: parsedPharmacy.location,
         pais: 'España'
       },
-      direccion: pharmacy.address || '',
+      direccion: parsedPharmacy.address || '',
     });
     await nuevaFarmacia.save();
 
@@ -62,12 +84,13 @@ router.post('/', async (req, res) => {
       nombre: name,
       categoria: type,
       peso: weight,
-      farmacias: [{ farmacia: nuevaFarmacia._id, precio: pharmacy.price }]
+      farmacias: [{ farmacia: nuevaFarmacia._id, precio: parsedPharmacy.price }]
     });
     await nuevoItem.save();
 
     res.status(201).json({ message: 'Producto creado', product: nuevoItem });
   } catch (error) {
+    console.error('Error al crear producto:', error);
     res.status(500).json({ message: 'Error al crear producto', error: error.message });
   }
 });

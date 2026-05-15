@@ -5,6 +5,54 @@ import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Obtener perfil del usuario
+router.get('/profile', auth, async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.user.id).select('-contrasena');
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.json(usuario);
+  } catch (error) {
+    res.status(500).json({ message: 'Error del servidor', error: error.message });
+  }
+});
+
+// Actualizar perfil del usuario y notificaciones
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { nombre_apellidos, email, telefono, direccion, notificaciones } = req.body;
+    
+    const usuario = await Usuario.findById(req.user.id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (nombre_apellidos) usuario.nombre_apellidos = nombre_apellidos;
+    if (email) usuario.email = email;
+    if (telefono !== undefined) usuario.telefono = telefono;
+    if (direccion !== undefined) usuario.direccion = direccion;
+    
+    if (notificaciones) {
+      if (notificaciones.push !== undefined) usuario.ajustes.notificaciones.push = notificaciones.push;
+      if (notificaciones.email !== undefined) usuario.ajustes.notificaciones.email = notificaciones.email;
+      if (notificaciones.ofertas !== undefined) usuario.ajustes.notificaciones.ofertas = notificaciones.ofertas;
+    }
+
+    await usuario.save();
+    
+    res.json({ message: 'Perfil actualizado', usuario: {
+      nombre_apellidos: usuario.nombre_apellidos,
+      email: usuario.email,
+      telefono: usuario.telefono,
+      direccion: usuario.direccion,
+      notificaciones: usuario.ajustes.notificaciones
+    }});
+  } catch (error) {
+    res.status(500).json({ message: 'Error del servidor', error: error.message });
+  }
+});
+
 // Añadir o quitar favorito
 router.post('/favorites', auth, async (req, res) => {
   try {

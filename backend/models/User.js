@@ -22,9 +22,14 @@ const usuarioSchema = new mongoose.Schema({
     required: true
   },
   telefono: String,
+  direccion: String,
   fecha_nacimiento: String,
   ajustes: {
-    notificaciones: { type: Boolean, default: true },
+    notificaciones: {
+      push: { type: Boolean, default: true },
+      email: { type: Boolean, default: true },
+      ofertas: { type: Boolean, default: false }
+    },
     privacidad: { type: String, default: 'publico' },
     idioma: { type: String, default: 'es' },
     tema: { type: String, default: 'claro' }

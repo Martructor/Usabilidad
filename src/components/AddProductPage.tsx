@@ -8,7 +8,7 @@ interface AddProductPageProps {
 
 export function AddProductPage({ onBack, onSuccess }: AddProductPageProps) {
   const [productName, setProductName] = useState('');
-  const [image, setImage] = useState('');
+  const [image, setImage] = useState<File | null>(null);
   const [weight, setWeight] = useState('');
   const [productType, setProductType] = useState('');
   const [location, setLocation] = useState('');
@@ -25,21 +25,21 @@ export function AddProductPage({ onBack, onSuccess }: AddProductPageProps) {
 
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const formData = new FormData();
+      formData.append('name', productName);
+      if (image) formData.append('image', image);
+      formData.append('weight', weight);
+      formData.append('type', productType);
+      formData.append('pharmacy', JSON.stringify({
+        name: pharmacyName,
+        location,
+        address,
+        price: Number(price)
+      }));
+
       const response = await fetch(`${API_URL}/api/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: productName,
-          image,
-          weight,
-          type: productType,
-          pharmacy: {
-            name: pharmacyName,
-            location,
-            address,
-            price: Number(price)
-          }
-        })
+        body: formData
       });
 
       const data = await response.json();
@@ -107,17 +107,16 @@ export function AddProductPage({ onBack, onSuccess }: AddProductPageProps) {
 
             <div>
               <label htmlFor="image" className="block text-sm text-gray-700 mb-2">
-                URL de la imagen
+                Foto del producto
               </label>
               <div className="relative">
                 <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="url"
+                  type="file"
+                  accept="image/*"
                   id="image"
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  onChange={(e) => setImage(e.target.files?.[0] || null)}
+                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 cursor-pointer"
                   required
                 />
               </div>

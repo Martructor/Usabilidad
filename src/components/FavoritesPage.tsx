@@ -25,7 +25,11 @@ export function FavoritesPage({ onBack, onProductClick, onToggleFavorite }: Favo
       });
       if (res.ok) {
         const data = await res.json();
-        setFavoriteProducts(data);
+        const formatted = data.map((fav: any) => ({
+          ...fav,
+          image: fav.image?.startsWith('/') ? `${API_URL}${fav.image}` : fav.image
+        }));
+        setFavoriteProducts(formatted);
       }
     } catch (e) {
       console.error('Error fetching favorites:', e);
