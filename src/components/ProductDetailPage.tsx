@@ -402,15 +402,7 @@ export function ProductDetailPage({ product, onBack, favoriteLocationIds, onTogg
             </p>
           </div>
 
-          {/* Botones de acción */}
-          <div className="mt-6 space-y-3">
-            <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg">
-              Contactar farmacia
-            </button>
-            <button className="w-full border-2 border-green-600 text-green-600 py-4 rounded-xl hover:bg-green-50 transition-all">
-              Ver en mapa
-            </button>
-          </div>
+
 
           {/* Aviso legal */}
           <div className="mt-6 p-4 bg-green-50 rounded-lg">

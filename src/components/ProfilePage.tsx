@@ -1,4 +1,6 @@
 import { ArrowLeft, User as UserIcon, Mail, Phone, MapPin, Calendar, Edit, Heart, ShoppingBag, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface ProfilePageProps {
   onBack: () => void;
@@ -6,7 +8,45 @@ interface ProfilePageProps {
   userEmail: string;
   onLogout: () => void;
 }
+
 export function ProfilePage({ onBack, userName, userEmail, onLogout }: ProfilePageProps) {
+  const [notificationsPush, setNotificationsPush] = useState(true);
+  const [notificationsEmail, setNotificationsEmail] = useState(true);
+  const [offersEmail, setOffersEmail] = useState(true);
+
+  useEffect(() => {
+    const savedPush = localStorage.getItem('boticario_notif_push');
+    const savedEmail = localStorage.getItem('boticario_notif_email');
+    const savedOffers = localStorage.getItem('boticario_offers_email');
+
+    if (savedPush !== null) setNotificationsPush(savedPush === 'true');
+    if (savedEmail !== null) setNotificationsEmail(savedEmail === 'true');
+    if (savedOffers !== null) setOffersEmail(savedOffers === 'true');
+  }, []);
+
+  const handleSaveSetting = (key: string, value: boolean) => {
+    localStorage.setItem(key, value.toString());
+  };
+
+  const handlePushChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNotificationsPush(e.target.checked);
+    handleSaveSetting('boticario_notif_push', e.target.checked);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNotificationsEmail(e.target.checked);
+    handleSaveSetting('boticario_notif_email', e.target.checked);
+  };
+
+  const handleOffersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOffersEmail(e.target.checked);
+    handleSaveSetting('boticario_offers_email', e.target.checked);
+  };
+
+  const handleManagePersonalData = () => {
+    toast.info('Redirigiendo a gestión de datos personales...');
+  };
+
   return (
     <div className="min-h-screen bg-green-50">
       {/* Header */}
@@ -107,21 +147,29 @@ export function ProfilePage({ onBack, userName, userEmail, onLogout }: ProfilePa
 
         {/* Preferences */}
         <div className="bg-white mt-4 mx-4 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-gray-900 mb-4">Preferencias</h3>
+          <h3 className="text-gray-900 mb-4">Notificaciones y Preferencias</h3>
           
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-700">Notificaciones</span>
+              <span className="text-sm text-gray-700">Notificaciones push</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input type="checkbox" className="sr-only peer" checked={notificationsPush} onChange={handlePushChange} />
                 <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
               </label>
             </div>
 
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <span className="text-sm text-gray-700">Ofertas por email</span>
+              <span className="text-sm text-gray-700">Notificaciones por email</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <input type="checkbox" className="sr-only peer" checked={notificationsEmail} onChange={handleEmailChange} />
+                <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <span className="text-sm text-gray-700">Ofertas y promociones</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={offersEmail} onChange={handleOffersChange} />
                 <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
               </label>
             </div>
@@ -130,6 +178,9 @@ export function ProfilePage({ onBack, userName, userEmail, onLogout }: ProfilePa
 
         {/* Account Actions */}
         <div className="mt-4 mx-4 space-y-3">
+          <button onClick={handleManagePersonalData} className="w-full bg-white text-gray-700 py-4 rounded-xl hover:bg-gray-50 transition-all shadow-sm border border-gray-200">
+            Gestionar datos personales
+          </button>
           <button className="w-full bg-white text-green-600 py-4 rounded-xl hover:bg-green-50 transition-all shadow-sm border border-green-200">
             Cambiar contraseña
           </button>

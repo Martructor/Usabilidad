@@ -15,7 +15,8 @@ import { AddProductPage } from './components/AddProductPage';
 import { UpdateProductPage } from './components/UpdateProductPage';
 import { Product } from './types';
 import { ProductDetailPage } from './components/ProductDetailPage';
-
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { TermsConditionsPage } from './components/TermsConditionsPage';
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // km
@@ -31,7 +32,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [maxDistance, setMaxDistance] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'register' | 'addProduct' | 'updateProduct' | 'productDetail' | 'profile' | 'settings' | 'favorites' | 'addresses'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'login' | 'register' | 'addProduct' | 'updateProduct' | 'productDetail' | 'profile' | 'settings' | 'favorites' | 'addresses' | 'privacyPolicy' | 'termsConditions'>('home');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
@@ -246,7 +247,8 @@ export default function App() {
           distance: Number(minDistance.toFixed(1)),
           location: closestLocation.location,
           seller: closestLocation.seller,
-          price: closestLocation.price
+          price: closestLocation.price,
+          pharmacyId: closestLocation.id
         };
       }
       return product;
@@ -258,6 +260,7 @@ export default function App() {
           location: cityLoc.location,
           seller: cityLoc.seller,
           price: cityLoc.price,
+          pharmacyId: cityLoc.id,
           distance: undefined
         };
       }
@@ -346,6 +349,26 @@ export default function App() {
     return (
       <SettingsPage
         onBack={() => setCurrentPage('home')}
+        onViewPrivacyPolicy={() => setCurrentPage('privacyPolicy')}
+        onViewTerms={() => setCurrentPage('termsConditions')}
+      />
+    );
+  }
+
+  // Show Privacy Policy Page
+  if (currentPage === 'privacyPolicy') {
+    return (
+      <PrivacyPolicyPage
+        onBack={() => setCurrentPage('settings')}
+      />
+    );
+  }
+
+  // Show Terms and Conditions Page
+  if (currentPage === 'termsConditions') {
+    return (
+      <TermsConditionsPage
+        onBack={() => setCurrentPage('settings')}
       />
     );
   }
